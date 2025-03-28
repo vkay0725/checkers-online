@@ -2,6 +2,18 @@ import socket
 import chess
 import chess.engine
 
+board = [
+    ["r", "n", "b", "q", "k", "b", "n", "r"], #black pieces
+    ["p", "p", "p", "p", "p", "p", "p", "p"], #black pawns
+    [".", ".", ".", ".", ".", ".", ".", "."], 
+    [".", ".", ".", ".", ".", ".", ".", "."],
+    [".", ".", ".", ".", ".", ".", ".", "."],
+    [".", ".", ".", ".", ".", ".", ".", "."],
+    ["P", "P", "P", "P", "P", "P", "P", "P"],  #white pawns
+    ["R", "N", "B", "Q", "K", "B", "N", "R"] #white pieces
+]
+
+
 def is_valid_move(board, move):
     try:
         chess.Move.from_uci(move)
