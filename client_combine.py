@@ -3,7 +3,7 @@ import time
 import threading
 import sys
 import os
-import select
+
 
 def clear_screen():
     """Clear the console screen"""
@@ -145,32 +145,22 @@ def start_client(host='127.0.0.1', port=65244):
         # Main input loop
         while True:
             try:
-                # Wait for server messages or user input
-                ready_to_read, _, _ = select.select([client_socket], [], [], 0.1)
-                # Handle server messages
-                for sock in ready_to_read:
-                    server_msg = sock.recv(4096).decode('utf-8')
-                    if not server_msg:
-                        print("Disconnected from server.")
-                        exit()
-                    print(server_msg)  # Show server message (e.g., board + "Your turn, BLACK")
-                if "Your turn" in server_msg:
-                    move = input("\nEnter your move (e.g., E2 to E4), 'end game' to end the game, or 'quit' to exit: ")
+                move = input("\nEnter your move (e.g., E2 to E4), 'end game' to end the game, or 'quit' to exit: ")
+                
+                if move.lower() == "quit":
+                    client_socket.sendall("quit".encode('utf-8'))
+                    print("You quit the game.")
+                    break
+                elif move.lower() == "end game":
+                    client_socket.sendall("end game".encode('utf-8'))
+                    print("Ending the game...")
+                    time.sleep(1)  # Wait for server response
+                else:
+                    # Send the move to the server
+                    client_socket.sendall(move.encode('utf-8'))
                     
-                    if move.lower() == "quit":
-                        client_socket.sendall("quit".encode('utf-8'))
-                        print("You quit the game.")
-                        break
-                    elif move.lower() == "end game":
-                        client_socket.sendall("end game".encode('utf-8'))
-                        print("Ending the game...")
-                        time.sleep(1)  # Wait for server response
-                    else:
-                        # Send the move to the server
-                        client_socket.sendall(move.encode('utf-8'))
-                        
-                        # Wait a bit for the server to process
-                        time.sleep(0.5)
+                    # Wait a bit for the server to process
+                    time.sleep(0.5)
                 
             except KeyboardInterrupt:
                 print("\nKeyboard interrupt received. Exiting...")
@@ -183,11 +173,7 @@ def start_client(host='127.0.0.1', port=65244):
     except ConnectionRefusedError:
         print("Could not connect to the server. Make sure the server is running.")
     except Exception as e:
-        print( "not associated" in str(e)) #not working to do
-        if "not associated" in str(e):
-            print("Server is busy. Please try again later.")
-        else:
-            print(f"An error occurred: {e}")
+        print(f"An error occurred: {e}")
     finally:
         client_socket.close()
         print("Disconnected from server.")
