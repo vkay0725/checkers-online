@@ -118,7 +118,7 @@ class EmailHandler:
         self.smtp_server = smtp_server
         self.smtp_port = smtp_port
         self.sender_email = "220120014@iitdh.ac.in"
-        self.sender_password = "rsnl dwjd lsia ctbg"
+        self.sender_password = "abcd" #enter your password generated from apps.google.com
         
         # Player email addresses
         self.player_emails = {
