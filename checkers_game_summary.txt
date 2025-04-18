@@ -1,0 +1,82 @@
+CHECKERS GAME SUMMARY
+=====================
+
+Date: 2025-04-18
+Start time: 12:57:57
+End time: 13:41:40
+End reason: Game completed
+Winner: BLACK
+
+MOVES:
+------
+1. BLACK moved from C3 to D4 (13:02:04)
+2. WHITE moved from B6 to A5 (13:02:46)
+3. BLACK moved from D4 to C5 (13:03:24)
+4. WHITE moved from D6 to B4 (13:04:00)
+5. BLACK moved from A3 to C5 (13:05:24)
+6. WHITE moved from A5 to B4 (13:12:45)
+7. BLACK moved from E3 to D4 (13:13:20)
+8. WHITE moved from F6 to G5 (13:13:51)
+9. BLACK moved from G3 to F4 (13:14:29)
+10. WHITE moved from G5 to E3 (13:15:30)
+11. BLACK moved from D2 to F4 (13:16:19)
+12. WHITE moved from C7 to D6 (13:17:08)
+13. BLACK moved from B2 to C3 (13:17:36)
+14. WHITE moved from B4 to D2 (13:18:11)
+15. BLACK moved from C1 to E3 (13:18:28)
+16. WHITE moved from d6 to B4 (13:18:47)
+17. BLACK moved from A1 to B2 (13:19:07)
+18. WHITE moved from A7 to B6 (13:19:41)
+19. BLACK moved from B2 to A3 (13:20:09)
+20. WHITE moved from B4 to C3 (13:26:27)
+21. BLACK moved from A3 to B4 (13:26:40)
+22. WHITE moved from C3 to B2 (13:26:51)
+23. BLACK moved from B4 to A5 (13:27:01)
+24. WHITE moved from B6 to C5 (13:27:14)
+25. BLACK moved from D4 to B6 (13:28:07)
+26. WHITE moved from B8 to C7 (13:28:27)
+27. BLACK moved from B6 to A7 (13:28:44)
+28. WHITE moved from B2 to A1 (13:29:01)
+29. BLACK moved from A7 to B8 (13:29:18)
+30. WHITE moved from H6 to G5 (13:31:47)
+31. BLACK moved from B8 to D6 (13:32:00)
+32. WHITE moved from E7 to C5 (13:32:25)
+33. BLACK moved from F4 to H6 (13:32:43)
+34. WHITE moved from C5 to B4 (13:33:19)
+35. BLACK moved from A5 to B6 (13:33:56)
+36. WHITE moved from B4 to A3 (13:34:37)
+37. BLACK moved from B6 to A7 (13:34:48)
+38. WHITE moved from A3 to B2 (13:35:20)
+39. BLACK moved from A7 to B8 (13:35:31)
+40. WHITE moved from B2 to C1 (13:35:51)
+41. BLACK moved from E3 to D4 (13:36:16)
+42. WHITE moved from G7 to F6 (13:36:32)
+43. BLACK moved from D4 to C5 (13:36:51)
+44. WHITE moved from D8 to C7 (13:37:22)
+45. BLACK moved from B8 to D6 (13:37:34)
+46. WHITE moved from C1 to D2 (13:37:53)
+47. BLACK moved from E1 to C3 (13:38:05)
+48. WHITE moved from F6 to E5 (13:38:33)
+49. BLACK moved from D6 to F4 (13:38:44)
+50. WHITE moved from F8 to G7 (13:39:06)
+51. BLACK moved from H6 to F8 (13:39:20)
+52. WHITE moved from H8 to G7 (13:39:35)
+53. BLACK moved from F8 to H6 (13:39:48)
+54. WHITE moved from A1 to B2 (13:40:26)
+55. BLACK moved from C3 to B4 (13:40:52)
+56. WHITE moved from B2 to C1 (13:41:06)
+57. BLACK moved from F4 to E3 (13:41:20)
+58. WHITE moved from C1 to D2 (13:41:31)
+59. BLACK moved from E3 to C1 (13:41:40)
+
+FINAL BOARD STATE:
+----------------
+  A B C D E F G H
+8 . . . . . . . . 
+7 . . . . . . . . 
+6 . . . . . . . B 
+5 . . b . . . . . 
+4 . b . . . . . . 
+3 . . . . . . . . 
+2 . . . . . b . b 
+1 . . B . . . b . 
