@@ -86,6 +86,8 @@ game_ender = None  # Track who ended the game
 ad_blocker_status = "Ad blocker not initialized"
 current_domain = random.choice(AD_DOMAINS_TO_CHECK)  # Track current displayed domain
 current_domain_status = "Not checked yet"
+new_game_requests = [False, False]  # Track which players requested a new game (BLACK, WHITE)
+        
 
 class BlocklistResolver(BaseResolver):
     def __init__(self, upstream_dns, blocklist_path, allowlist_path=None):
@@ -583,7 +585,7 @@ def refresh_status():
 # === Client Handler ===
 def handle_client(client_socket, client_id):
     """Handle communication with a client"""
-    global board, game_state, game_ender
+    global board, game_state, game_ender, new_game_requests
     
     player_color = "BLACK" if client_id == 0 else "WHITE"
     try:
@@ -610,13 +612,31 @@ def handle_client(client_socket, client_id):
             broadcast_to_clients(black_msg, white_msg)
         
         # Main client communication loop
+                
         while True:
             try:
                 data = client_socket.recv(1024).decode('utf-8')
                 if not data:
                     break
-
-                # ADDED: Handle email registration
+                # In handle_client, when processing "new game" command:
+                if data.lower() == "new game":
+                    new_game_requests[client_id] = True
+                    client_socket.sendall("New game requested. Waiting for other player...\n".encode('utf-8'))
+                    
+                    # If both players requested a new game OR only one player connected, restart
+                    if all(new_game_requests) or len(clients) == 1:
+                        game_state = "playing"
+                        board = CheckersBoard()
+                        new_game_requests = [False, False]  # Reset requests
+                        
+                        # Reset game history for email summary
+                        server_bridge.on_game_start()
+                        
+                        board_str = board.board_to_string()
+                        black_msg = f"\nNew game started!\n{board_str}\n\nYour turn, BLACK\n"
+                        white_msg = f"\nNew game started!\n{board_str}\n\nBLACK's turn first\n"
+                        broadcast_to_clients(black_msg, white_msg)
+            
                 if data.startswith("EMAIL:"):
                     handled, response = server_bridge.handle_email_preference(data, player_color)
                     if handled:
@@ -631,7 +651,8 @@ def handle_client(client_socket, client_id):
 
                         # ADDED: Send game summary by email when player quits
                         server_bridge.on_game_end(f"Player {player_color} quit", None)
-                    
+                    # Clear new game request for this player
+                    new_game_requests[client_id] = False
                     opponent_msg = f"\nOpponent ({player_color}) quit. Game over.\n"
                     player_msg = f"\nYou've quit the game.\n"
                     
@@ -740,19 +761,26 @@ def socket_thread():
         print("Server listening on 127.0.0.1:65244")
         
         while True:
+            # Always accept the connection
+            client, addr = server.accept()
+            print(f"Connection attempt from {addr}")
+            
             if len(clients) < 2:
-                client, addr = server.accept()
-                print(f"Connected to {addr}")
-                
                 # Add client to our list
                 clients.append(client)
                 client_id = len(clients) - 1
+                print(f"Player {client_id} ({addr}) connected")
                 
                 # Start a thread to handle this client
                 threading.Thread(target=handle_client, args=(client, client_id), daemon=True).start()
             else:
-                # Wait before checking again
-                time.sleep(1)
+                # Reject connection if we already have 2 players
+                print(f"Rejecting connection from {addr}: server full")
+                try:
+                    client.sendall("SERVER FULL: Only two players allowed. Please try again later.\n".encode('utf-8'))
+                    client.close()
+                except:
+                    pass
     
     except Exception as e:
         print(f"Server error: {str(e)}")
