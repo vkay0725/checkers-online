@@ -83,17 +83,6 @@ def message_listener(client_socket):
                         board_end = len(lines)
                     board_str = '\n'.join(lines[board_start:board_end])
                     display_board(board_str)
-
-            # # Check for board update
-            # if "Board Updated" in server_message or "Game started" in server_message:
-            #     # Extract and display the board
-            #     board_start = server_message.find('  0 1 2 3 4 5 6 7')
-            #     if board_start != -1:
-            #         board_end = server_message.find('\n\n', board_start)
-            #         if board_end == -1:
-            #             board_end = len(server_message)
-            #         board_str = server_message[board_start:board_end]
-            #         display_board(board_str)
             
             # Check for game events
             if "Game over" in server_message or "wins" in server_message:
