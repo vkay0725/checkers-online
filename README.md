@@ -8,3 +8,4 @@ online checkers game with chatbox using socket programming(client-server archite
      `python3 server_combined.py`
   4.  open two more terminals and run the following command in both of them:
      ` python3 client_combined.py `
+# sample output images are attached for a game.
