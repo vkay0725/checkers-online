@@ -1,57 +1,77 @@
 # checkers-online
 online checkers game with dns adblocker and smtp email summary
 
-DNS Adblocker Setup Guide
-Prerequisites
+
+Sure! Here's your content properly formatted for a `README.md` file using Markdown syntax, with clean sections and code blocks:
+
+---
+
+# 🕹️ checkers-online  
+An online Checkers game bundled with a DNS Adblocker and SMTP email summary feature.
+
+---
+
+## 📦 DNS Adblocker Setup Guide
+
+### ✅ Prerequisites
+
 Make sure you have the following installed:
 
-Python 3+
+- Python 3+
+- [`dnslib`](https://pypi.org/project/dnslib/)
+- [`requests`](https://pypi.org/project/requests/)
+- [`gradio`](https://pypi.org/project/gradio/)
 
-dnslib
+---
 
-requests
+### 📥 Installation
 
-gradio
-
-Installation
 Install the required Python packages:
 
-bash
-Copy
-Edit
+```bash
 pip install dnslib 
 pip install requests
 pip install gradio
-Installation and Setup
-Run the setup script:
+```
 
-bash
-Copy
-Edit
-./setup.sh
-Follow the instructions displayed in the terminal.
+---
 
-Start the DNS adblocker with admin privileges:
+### ⚙️ Installation and Setup
 
-bash
-Copy
-Edit
-sudo ./dns_adblocker.py --download --port 53
-Launch the application components in separate terminals:
+1. **Run the setup script:**
 
-bash
-Copy
-Edit
-python3 dns_adblocker.py
-python3 server_combine.py
-python3 client_combine.py
-Important Note
-Make sure the following files are in the same directory as the other project files:
+    ```bash
+    ./setup.sh
+    ```
 
-server_bridge.py
+2. **Follow the instructions** displayed in the terminal.
 
-email_handler.py
+3. **Start the DNS adblocker with admin privileges:**
 
+    ```bash
+    sudo ./dns_adblocker.py --download --port 53
+    ```
+
+4. **Launch the application components in separate terminals:**
+
+    ```bash
+    python3 dns_adblocker.py
+    python3 server_combine.py
+    python3 client_combine.py
+    ```
+
+---
+
+### ⚠️ Important Note
+
+Ensure the following files are located in the same directory as the other project files:
+
+- `server_bridge.py`
+- `email_handler.py`
+
+---
+
+Let me know if you want me to add a game usage section, email summary details, or a section for contributors/license!
 
 
 
