@@ -1,6 +1,6 @@
 
 # 🕹️ Checkers-online  
-An online Checkers game bundled with a DNS Adblocker and SMTP email summary feature.
+An online Checkers game bundled with a DNS Adblocker and SMTP email summary feature, for course Computer Networks Spring 2025,IIT Dharwad
 
 ---
 
@@ -64,7 +64,7 @@ Ensure the following files are located in the same directory as the other projec
 
 ---
 
-Let me know if you want me to add a game usage section, email summary details, or a section for contributors/license!
+
 
 
 
