@@ -1,17 +1,5 @@
 
-# 🕹️ Checkers-Online  
-**An online multiplayer checkers game integrated with a DNS Adblocker and SMTP email summary reporting.**
-
----
-
-Let me know if you'd like a feature list, architecture diagram, or usage instructions included right after this!
-
-
-Sure! Here's your content properly formatted for a `README.md` file using Markdown syntax, with clean sections and code blocks:
-
----
-
-# 🕹️ checkers-online  
+# 🕹️ Checkers-online  
 An online Checkers game bundled with a DNS Adblocker and SMTP email summary feature.
 
 ---
