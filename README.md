@@ -1,12 +1,12 @@
 
-# 🕹️ Checkers-online  
+# Checkers-online  
 An online Checkers game bundled with a DNS Adblocker and SMTP email summary feature, for course Computer Networks Spring 2025,IIT Dharwad
 
 ---
 
-## 📦 DNS Adblocker Setup Guide
+## DNS Adblocker Setup Guide
 
-### ✅ Prerequisites
+### Prerequisites
 
 Make sure you have the following installed:
 
