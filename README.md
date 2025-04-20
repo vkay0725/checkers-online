@@ -1,4 +1,4 @@
-# Checers online
+# Checkers online
 
 An online checkers game with DNS Adblocing functionality and SMTP mail summary feature, for Computer Networks spring 2025, IIT Dharwad
 
