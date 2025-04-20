@@ -883,7 +883,7 @@ dns_thread = threading.Thread(target=dns_server.start, daemon=True)
 dns_thread.start()
 
 with gr.Blocks() as demo:
-    gr.Markdown("###Checkers Game with Ad Blocker")
+    gr.Markdown("### Checkers Game with Ad Blocker")
     
     with gr.Row():
         with gr.Column(scale=3):
@@ -900,14 +900,14 @@ with gr.Blocks() as demo:
                 end_game_btn = gr.Button("End Game")
         
         with gr.Column(scale=1):
-            gr.Markdown("###Game Info")
+            gr.Markdown("### Game Info")
             players_info = gr.Textbox(label="Connected Players", interactive=False, value="BLACK: Waiting\nWHITE: Waiting")
             
-            gr.Markdown("###Ad Blocker Status")
+            gr.Markdown("### Ad Blocker Status")
             ad_blocker_info = gr.Textbox(label="Domain Status", interactive=False, value="Initializing...")
             domain_refresh_btn = gr.Button("Refresh Domain")
             
-            gr.Markdown("###Rules")
+            gr.Markdown("### Rules")
             gr.Markdown("""
             - BLACK moves first
             - Regular checkers can only move diagonally forward
