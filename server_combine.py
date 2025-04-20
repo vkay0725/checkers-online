@@ -14,10 +14,10 @@ import requests
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
-# Add email bridge import
+#Add email bridge import
 import server_bridge
 
-# Set up email credentials at startup
+#Set up email credentials at startup
 print("Setting up email functionality...")
 server_bridge.setup_email_credentials()
 
@@ -31,14 +31,14 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import queue
 
-# === Game Constants ===
+#Game Constants
 EMPTY = 0
 BLACK = 1
 WHITE = 2
 BLACK_KING = 3
 WHITE_KING = 4
 
-# === Ad Blocker Constants ===
+#Ad Blocker Constants
 UPSTREAM_DNS = "8.8.8.8"
 BLOCKLIST_SOURCES = [
     "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
@@ -48,9 +48,9 @@ BLOCKLIST_SOURCES = [
     "https://someonewhocares.org/hosts/hosts"
 ]
 
-# Domains to check - mix of ad domains and common non-ad domains
+#Domains to check - mix of ad domains and common non-ad domains
 AD_DOMAINS_TO_CHECK = [
-    # Ad domains (likely to be blocked)
+    #Ad domains (likely to be blocked)
     "doubleclick.net",
     "googleadservices.com",
     "googlesyndication.com",
@@ -62,7 +62,7 @@ AD_DOMAINS_TO_CHECK = [
     "analytics.example.com",
     "metrics.example.com",
     
-    # Non-ad domains (should not be blocked)
+    #Non-ad domains (should not be blocked)
     "google.com",
     "youtube.com",
     "github.com",
@@ -75,19 +75,19 @@ AD_DOMAINS_TO_CHECK = [
     "gradio.app"
 ]
 
-# Global variables
+#Global variables
 clients = []
 client_names = []
-game_state = "waiting"  # "waiting", "playing", "over"
-message_queues = {}  # For client communication
+game_state = "waiting"  #"waiting", "playing", "over"
+message_queues = {}  #For client communication
 board = None
-current_turn = BLACK  # Track whose turn it is
-game_ender = None  # Track who ended the game
+current_turn = BLACK  #Track whose turn it is
+game_ender = None  #Track who ended the game
 ad_blocker_status = "Ad blocker not initialized"
-current_domain = random.choice(AD_DOMAINS_TO_CHECK)  # Track current displayed domain
+current_domain = random.choice(AD_DOMAINS_TO_CHECK)  #Track current displayed domain
 current_domain_status = "Not checked yet"
-new_game_requests = [False, False]  # Track which players requested a new game (BLACK, WHITE)
-        
+new_game_requests = [False, False]  #Track which players requested a new game (BLACK, WHITE)
+client_states = [{"active": False, "waiting": False}, {"active": False, "waiting": False}]  #Track client state
 
 class BlocklistResolver(BaseResolver):
     def __init__(self, upstream_dns, blocklist_path, allowlist_path=None):
@@ -112,14 +112,14 @@ class BlocklistResolver(BaseResolver):
                 
             with open(self.blocklist_path, 'r', encoding='utf-8', errors='ignore') as f:
                 for line in f:
-                    # Skip comments and empty lines
+                    #Skip comments and empty lines
                     line = line.strip()
                     if line and not line.startswith('#'):
-                        # Handle hosts file format (IP domain)
+                        #Handle hosts file format (IP domain)
                         parts = line.split()
                         if len(parts) >= 2:
                             domain = parts[1].lower()
-                            # Skip localhost entries
+                            #Skip localhost entries
                             if domain not in ('localhost', 'localhost.localdomain', 'local'):
                                 self.blocklist.add(domain)
             print(f"Loaded {len(self.blocklist)} domains into blocklist")
@@ -147,27 +147,27 @@ class BlocklistResolver(BaseResolver):
         domain = str(request.q.qname)
         self.total_count += 1
         
-        # Remove trailing dot from domain
+        #Remove trailing dot from domain
         if domain.endswith('.'):
             domain = domain[:-1]
         
         domain = domain.lower()
             
-        # Check if domain is in allowlist
+        #Check if domain is in allowlist
         if self.allowlist and domain in self.allowlist:
-            # Allow this domain even if it's in blocklist
+            #Allow this domain even if it's in blocklist
             pass
-        # Check if domain is in blocklist
+        #Check if domain is in blocklist
         elif domain in self.blocklist:
             self.blocked_count += 1
             print(f"Blocked: {domain}")
             
-            # Create a response with 0.0.0.0 for blocked domains
+            #Create a response with 0.0.0.0 for blocked domains
             reply = request.reply()
             reply.add_answer(RR(request.q.qname, QTYPE.A, rdata=dns.A("0.0.0.0"), ttl=60))
             return reply
             
-        # If not blocked, forward to upstream DNS
+        #If not blocked, forward to upstream DNS
         try:
             if handler.protocol == 'udp':
                 proxy_r = request.send(self.upstream_dns, 12553)
@@ -318,7 +318,6 @@ class CheckersBoard:
     def coords_to_notation(self, row, col):
         return f"{chr(col + ord('A'))}{8 - row}"
 
-# === Helper Functions ===
 def notation_to_coords(notation):
     col = ord(notation[0].upper()) - ord('A')
     row = 8 - int(notation[1])
@@ -327,21 +326,21 @@ def notation_to_coords(notation):
 def broadcast_to_clients(message_black, message_white=None):
     """Send messages to connected clients, with customized messages per player"""
     if message_white is None:
-        message_white = message_black  # If no specific white message, use the same for both
+        message_white = message_black  #If no specific white message, use the same for both
         
-    # Send to BLACK player (if connected)
-    if len(clients) > 0:
+    #Send to BLACK player (if connected and active)
+    if len(clients) > 0 and client_states[0]["active"]:
         try:
             clients[0].sendall(message_black.encode('utf-8'))
         except:
-            pass
+            client_states[0]["active"] = False  #Mark as inactive if send fails
             
-    # Send to WHITE player (if connected)
-    if len(clients) > 1:
+    #Send to WHITE player (if connected and active)
+    if len(clients) > 1 and client_states[1]["active"]:
         try:
             clients[1].sendall(message_white.encode('utf-8'))
         except:
-            pass
+            client_states[1]["active"] = False  #Mark as inactive if send fails
 
 def update_game_status():
     """Update the game status based on current state"""
@@ -374,20 +373,20 @@ def check_domain_status(domain):
     global current_domain_status, ad_blocker
     
     try:
-        # Check directly against the blocklist
+        #Check directly against the blocklist
         if domain.lower() in ad_blocker.blocklist:
-            # Update stats when checking domain
+            #Update stats when checking domain
             ad_blocker.total_count += 1
             ad_blocker.blocked_count += 1
             current_domain_status = "🔴 Blocked"
             return f"Domain: {domain}\nStatus: 🔴 Blocked"
         elif ad_blocker.allowlist and domain.lower() in ad_blocker.allowlist:
-            # Update stats when checking domain
+            #Update stats when checking domain
             ad_blocker.total_count += 1
             current_domain_status = "🟢 Allowed (Allowlisted)"
             return f"Domain: {domain}\nStatus: 🟢 Allowed (Allowlisted)"
         else:
-            # Update stats when checking domain
+            #Update stats when checking domain
             ad_blocker.total_count += 1
             current_domain_status = "🟢 Allowed"
             return f"Domain: {domain}\nStatus: 🟢 Allowed"
@@ -405,7 +404,7 @@ def get_ad_blocker_status():
     status = "Ad Blocker Status\n\n"
     status += check_domain_status(current_domain)
     
-    # Add stats
+    #Add stats
     try:
         if ad_blocker and hasattr(ad_blocker, 'get_stats'):
             stats = ad_blocker.get_stats()
@@ -422,12 +421,12 @@ def refresh_domain():
     current_domain = random.choice(AD_DOMAINS_TO_CHECK)
     return get_ad_blocker_status()
 
-# === GUI Code ===
+#GUI
 def draw_board_gui(board_obj=None):
     if board_obj is None and board is not None:
         board_obj = board
     elif board_obj is None:
-        # Create a new board if none exists
+        #Create a new board if none exists
         board_obj = CheckersBoard()
     
     fig, ax = plt.subplots(figsize=(5, 5))
@@ -442,7 +441,7 @@ def draw_board_gui(board_obj=None):
             if piece != EMPTY:
                 clr = "#3B1F0B" if piece in (BLACK, BLACK_KING) else "#FFF5DC"
                 ax.add_patch(plt.Circle((col + 0.5, row + 0.5), 0.35, color=clr, ec="black", linewidth=1.5))
-                # Add a crown for kings
+                #Add a crown for kings
                 if piece in (BLACK_KING, WHITE_KING):
                     ax.text(col + 0.5, row + 0.5, "♔", fontsize=16, 
                            ha='center', va='center', 
@@ -469,41 +468,41 @@ def move_piece_gui(start, end):
         sr, sc = notation_to_coords(start.strip())
         er, ec = notation_to_coords(end.strip())
         
-        # Validate that the correct player is moving
+        #Validate that the correct player is moving
         piece = board.get_piece(sr, sc)
         is_black_piece = piece in (BLACK, BLACK_KING)
         is_white_piece = piece in (WHITE, WHITE_KING)
         
         if (is_black_piece and board.current_player != BLACK) or (is_white_piece and board.current_player != WHITE):
-            return draw_board_gui(board), "<span style='color:red'>Not your turn!</span>", get_player_status(), get_ad_blocker_status()
+            return draw_board_gui(board), "Not your turn!", get_player_status(), get_ad_blocker_status()
         
         if not board.make_move((sr, sc), (er, ec)):
-            return draw_board_gui(board), "<span style='color:red'>Invalid move.</span>", get_player_status(), get_ad_blocker_status()
+            return draw_board_gui(board), "Invalid move.", get_player_status(), get_ad_blocker_status()
         
-        # Update board status
+        #Update board status
         board_str = board.board_to_string()
         move_msg = f"\nMove made: {start} to {end}\n{board_str}\n"
-        # ADDED: Record move for email summary
-        player_color = "BLACK" if board.current_player == WHITE else "WHITE"  # Player who just moved
+        #Record move for email summary
+        player_color = "BLACK" if board.current_player == WHITE else "WHITE"  #Player who just moved
         server_bridge.record_move(player_color, start, end, board_str)
         
         if board.is_game_over():
             game_state = "over"
             winner = "BLACK" if board.get_winner() == BLACK else "WHITE"
             
-            # Send different messages to each player
+            #Send different messages to each player
             black_msg = f"\nGame over! {'You win!' if winner == 'BLACK' else 'WHITE wins.'}\n{board_str}\n"
             white_msg = f"\nGame over! {'You win!' if winner == 'WHITE' else 'BLACK wins.'}\n{board_str}\n"
             broadcast_to_clients(black_msg, white_msg)
 
-            # ADDED: Generate and send game summary by email
+            #Generate and send game summary by email
             server_bridge.on_game_end("Game completed", winner)
             
             return draw_board_gui(board), f"Game over! {winner} wins.", get_player_status(), get_ad_blocker_status()
         else:
             next_player = "BLACK" if board.current_player == BLACK else "WHITE"
             
-            # Send different messages to each player
+            #Send different messages to each player
             if next_player == "BLACK":
                 black_msg = f"{move_msg}\nYour turn, BLACK\n"
                 white_msg = f"{move_msg}\nBLACK is playing now\n"
@@ -517,7 +516,7 @@ def move_piece_gui(start, end):
             return draw_board_gui(board), f"Move made: {start} to {end}. {next_player}'s turn now.", get_player_status(), get_ad_blocker_status()
             
     except Exception as e:
-        return draw_board_gui(board), f"<span style='color:red'>Error: {str(e)}</span>", get_player_status(), get_ad_blocker_status()
+        return draw_board_gui(board), f"Error: {str(e)}", get_player_status(), get_ad_blocker_status()
 
 def restart_game():
     """Restart the game by creating a new board and updating all clients"""
@@ -528,14 +527,14 @@ def restart_game():
     
     board = CheckersBoard()
     game_state = "playing"
-    game_ender = None  # Reset game ender
+    game_ender = None  #Reset game ender
 
-    # ADDED: Reset game history for email summary #noted
+    #Reset game history for email summary
     server_bridge.on_game_start()
     
     board_str = board.board_to_string()
     
-    # Send different messages to each player
+    #Send different messages to each player
     black_msg = f"\nGame restarted!\n{board_str}\n\nYour turn, BLACK\n"
     white_msg = f"\nGame restarted!\n{board_str}\n\nBLACK's turn first\n"
     broadcast_to_clients(black_msg, white_msg)
@@ -551,24 +550,24 @@ def end_game(player=None):
     
     game_state = "over"
     
-    # Set who ended the game
+    #Set who ended the game
     if player:
         game_ender = player
     else:
         current_player = "BLACK" if board.current_player == BLACK else "WHITE"
         game_ender = current_player
     
-    # Send different messages to each player
+    #Send different messages to each player
     if game_ender == "BLACK":
         black_msg = "\nYou ended the game.\n"
         white_msg = "\nBLACK ended the game.\n"
-    else:  # WHITE
+    else:  #WHITE
         black_msg = "\nWHITE ended the game.\n"
         white_msg = "\nYou ended the game.\n"
         
     broadcast_to_clients(black_msg, white_msg)
     print("i am here to intitiate")
-    # ADDED: Generate and send game summary by email
+    #Generate and send game summary by email
     server_bridge.on_game_end(f"Game ended by {game_ender}", None)
     print("i am initiating email send")
     
@@ -582,54 +581,76 @@ def refresh_status():
     board_fig = draw_board_gui(board)
     return board_fig, status, players, ad_status
 
-# === Client Handler ===
+#Client Handler
 def handle_client(client_socket, client_id):
     """Handle communication with a client"""
-    global board, game_state, game_ender, new_game_requests
+    global board, game_state, game_ender, new_game_requests, client_states
     
     player_color = "BLACK" if client_id == 0 else "WHITE"
+    client_states[client_id]["active"] = True
+    
     try:
         client_socket.sendall(f"Connected as {player_color}\n".encode('utf-8'))
         
-        # Send initial game state
-        if board:
-            client_socket.sendall(board.board_to_string().encode('utf-8'))
-        else:
-            client_socket.sendall("Waiting for another player...\n".encode('utf-8'))
-        
-        # Check if the game can start now
-        if len(clients) == 2 and game_state == "waiting":
+        #Check if the game can start now when a second player joins
+        if len(clients) == 2 and (game_state == "waiting" or board is None):
+            #Reset game completely
             game_state = "playing"
             board = CheckersBoard()
-
+            game_ender = None
+            new_game_requests = [False, False]  #Reset requests
             
-            # ADDED: Initialize game history for email summary
+            #Reset waiting state for both clients
+            client_states[0]["waiting"] = False
+            client_states[1]["waiting"] = False
+
+            #Initialize game history for email summary
             server_bridge.on_game_start()
             
-            # Send different messages to each player
+            #Send different messages to each player
             black_msg = f"\nGame started! Both players connected.\n{board.board_to_string()}\n\nYour turn, BLACK\n"
             white_msg = f"\nGame started! Both players connected.\n{board.board_to_string()}\n\nBLACK's turn first\n"
             broadcast_to_clients(black_msg, white_msg)
+        else:
+            #Send initial game state to joining player
+            if board and game_state == "playing":
+                #If rejoining during an active game, send current board state
+                board_str = board.board_to_string()
+                curr_player_color = "BLACK" if board.current_player == BLACK else "WHITE"
+                if curr_player_color == player_color:
+                    client_socket.sendall(f"\nGame in progress.\n{board_str}\n\nYour turn, {player_color}\n".encode('utf-8'))
+                else:
+                    client_socket.sendall(f"\nGame in progress.\n{board_str}\n\n{curr_player_color}'s turn now\n".encode('utf-8'))
+            else:
+                client_socket.sendall("Waiting for another player...\n".encode('utf-8'))
+                client_states[client_id]["waiting"] = True
         
-        # Main client communication loop
-                
-        while True:
+        #Main client communication loop
+        while client_states[client_id]["active"]:
             try:
                 data = client_socket.recv(1024).decode('utf-8')
                 if not data:
+                    print(f"Empty data received from {player_color}, disconnecting.")
                     break
-                # In handle_client, when processing "new game" command:
+                
+                #Process "new game" requests
                 if data.lower() == "new game":
                     new_game_requests[client_id] = True
                     client_socket.sendall("New game requested. Waiting for other player...\n".encode('utf-8'))
+                    client_states[client_id]["waiting"] = True
                     
-                    # If both players requested a new game OR only one player connected, restart
+                    #If both players requested a new game OR only one player connected, restart
                     if all(new_game_requests) or len(clients) == 1:
                         game_state = "playing"
                         board = CheckersBoard()
-                        new_game_requests = [False, False]  # Reset requests
+                        new_game_requests = [False, False]  #Reset requests
                         
-                        # Reset game history for email summary
+                        #Reset waiting state for both clients
+                        for i in range(len(client_states)):
+                            if client_states[i]["active"]:
+                                client_states[i]["waiting"] = False
+                        
+                        #Reset game history for email summary
                         server_bridge.on_game_start()
                         
                         board_str = board.board_to_string()
@@ -637,41 +658,47 @@ def handle_client(client_socket, client_id):
                         white_msg = f"\nNew game started!\n{board_str}\n\nBLACK's turn first\n"
                         broadcast_to_clients(black_msg, white_msg)
             
-                if data.startswith("EMAIL:"):
+                #Process email preferences
+                elif data.startswith("EMAIL:"):
                     handled, response = server_bridge.handle_email_preference(data, player_color)
                     if handled:
                         print(f"Player {player_color} email preference: {response}")
                         continue
                 
-                if data.lower() == "quit":
-                    # Set who ended the game
+                #Process quit command
+                elif data.lower() == "quit":
+                    #Set who ended the game
                     if game_state == "playing":
                         game_state = "over"
                         game_ender = player_color
 
-                        # ADDED: Send game summary by email when player quits
+                        #Send game summary by email when player quits
                         server_bridge.on_game_end(f"Player {player_color} quit", None)
-                    # Clear new game request for this player
-                    new_game_requests[client_id] = False
-                    opponent_msg = f"\nOpponent ({player_color}) quit. Game over.\n"
-                    player_msg = f"\nYou've quit the game.\n"
                     
-                    if client_id == 0:  # BLACK player quit
-                        broadcast_to_clients(player_msg, opponent_msg)
-                    else:  # WHITE player quit
-                        broadcast_to_clients(opponent_msg, player_msg)
+                    #Clear new game request for this player
+                    new_game_requests[client_id] = False
+                    other_id = 1 - client_id  #Get the other client's ID (0->1, 1->0)
+                    
+                    #Check if other client is active
+                    if client_states[other_id]["active"]:
+                        opponent_msg = f"\nOpponent ({player_color}) quit. Game over.\n"
+                        player_msg = f"\nYou've quit the game.\n"
                         
+                        if client_id == 0:  #BLACK player quit
+                            broadcast_to_clients(player_msg, opponent_msg)
+                        else:  #WHITE player quit
+                            broadcast_to_clients(opponent_msg, player_msg)
                     break
                 
-                # Process moves from client
-                if game_state == "playing" and " to " in data:
-                    # Check if it's this player's turn
+                #Process moves from client during active game
+                elif game_state == "playing" and " to " in data:
+                    #Check if it's this player's turn
                     curr_player_color = "BLACK" if board.current_player == BLACK else "WHITE"
                     if curr_player_color != player_color:
                         client_socket.sendall("Not your turn!\n".encode('utf-8'))
                         continue
                     
-                    # Parse the move
+                    #Parse the move
                     parts = data.split(" to ")
                     start, end = parts[0].strip(), parts[1].strip()
                     
@@ -683,29 +710,29 @@ def handle_client(client_socket, client_id):
                             client_socket.sendall("Invalid move. Try again.\n".encode('utf-8'))
                             continue
                         
-                        # Update GUI (this won't actually happen here, we'll update via queue)
+                        #Update GUI via queue
                         board_str = board.board_to_string()
                         move_msg = f"\nMove made: {start} to {end}\n{board_str}\n"
 
-                        # ADDED: Record move for email summary
+                        #Record move for email summary
                         server_bridge.record_move(player_color, start, end, board_str)
                         
-                        # Check for game over
+                        #Check for game over
                         if board.is_game_over():
                             game_state = "over"
                             winner = "BLACK" if board.get_winner() == BLACK else "WHITE"
 
-                            # ADDED: Send game summary by email
+                            #Send game summary by email
                             server_bridge.on_game_end("Game completed", winner)
                             
-                            # Send different messages to each player
+                            #Send different messages to each player
                             black_msg = f"\nGame over! {'You win!' if winner == 'BLACK' else 'WHITE wins.'}\n{board_str}\n"
                             white_msg = f"\nGame over! {'You win!' if winner == 'WHITE' else 'BLACK wins.'}\n{board_str}\n"
                             broadcast_to_clients(black_msg, white_msg)
                         else:
                             next_player = "BLACK" if board.current_player == BLACK else "WHITE"
                             
-                            # Send different messages to each player
+                            #Send different messages to each player
                             if next_player == "BLACK":
                                 black_msg = f"{move_msg}\nYour turn, BLACK\n"
                                 white_msg = f"{move_msg}\nBLACK is playing now\n"
@@ -718,22 +745,31 @@ def handle_client(client_socket, client_id):
                     except Exception as e:
                         client_socket.sendall(f"Error processing move: {str(e)}\n".encode('utf-8'))
                 
-                # Handle end game command from client
-                if data.lower() == "end game" and game_state == "playing":
+                #Handle end game command from client
+                elif data.lower() == "end game" and game_state == "playing":
                     end_game(player_color)
-
-                    # ADDED: Send game summary by email
+                    #Send game summary by email
                     server_bridge.on_game_end(f"Game ended by {player_color}", None)
+                    
+                #Handle other commands
+                else:
+                    #Only show help if the client is not in waiting state
+                    if not client_states[client_id]["waiting"]:
+                        client_socket.sendall("Unrecognized command. Valid commands are:\n- [position] to [position] (e.g. 'E2 to E4')\n- 'end game'\n- 'quit'\n- 'new game'\n".encode('utf-8'))
             
             except ConnectionResetError:
-                print(f"Client {player_color} disconnected.")
+                print(f"Client {player_color} disconnected (connection reset).")
                 break
             except Exception as e:
                 print(f"Error handling client {player_color}: {str(e)}")
+                traceback.print_exc()
                 break
     
     finally:
-        # Handle client disconnect
+        #Handle client disconnect
+        client_states[client_id]["active"] = False
+        client_states[client_id]["waiting"] = False
+        
         if client_socket in clients:
             client_idx = clients.index(client_socket)
             clients.pop(client_idx)
@@ -742,15 +778,30 @@ def handle_client(client_socket, client_id):
                 client_socket.close()
             except:
                 pass
-            
-            if len(clients) < 2 and game_state == "playing":
+                
+            if len(clients) == 0:
+                #No players connected, reset everything
                 game_state = "waiting"
-                broadcast_to_clients(f"\nPlayer {player_color} disconnected. Waiting for players...\n")
+                game_ender = None
+                board = None
+                new_game_requests = [False, False]
+            elif game_state == "playing":
+                #One player left during active game
+                game_state = "waiting"
+                #Don't set board = None so the game state is preserved if player quickly reconnects
+                
+                #Notify remaining player
+                for i, client in enumerate(clients):
+                    try:
+                        client.sendall(f"\nPlayer {player_color} disconnected. Waiting for another player to join...\n".encode('utf-8'))
+                        client_states[i]["waiting"] = True
+                    except:
+                        pass
 
-# === Server Socket Code ===
+#=== Server Socket Code ===
 def socket_thread():
     """Thread to handle incoming socket connections"""
-    global board, game_state
+    global board, game_state, clients, client_states
     
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -761,20 +812,20 @@ def socket_thread():
         print("Server listening on 127.0.0.1:65244")
         
         while True:
-            # Always accept the connection
+            #Always accept the connection
             client, addr = server.accept()
             print(f"Connection attempt from {addr}")
             
             if len(clients) < 2:
-                # Add client to our list
+                #Add client to our list - assign the first free slot (0 or 1)
+                client_id = 0 if not client_states[0]["active"] else 1
                 clients.append(client)
-                client_id = len(clients) - 1
                 print(f"Player {client_id} ({addr}) connected")
                 
-                # Start a thread to handle this client
+                #Start a thread to handle this client
                 threading.Thread(target=handle_client, args=(client, client_id), daemon=True).start()
             else:
-                # Reject connection if we already have 2 players
+                #Reject connection if we already have 2 players
                 print(f"Rejecting connection from {addr}: server full")
                 try:
                     client.sendall("SERVER FULL: Only two players allowed. Please try again later.\n".encode('utf-8'))
@@ -787,52 +838,52 @@ def socket_thread():
     finally:
         server.close()
 
-# === UI Refresh Thread ===
+#UI Refresh Thread
 def ui_refresh_thread(refresh_btn):
     """Thread to periodically trigger UI refresh"""
     while True:
-        time.sleep(2)  # Refresh every 2 seconds
+        time.sleep(2)  #Refresh every 2 seconds
         try:
-            # Use the refresh button's click method to trigger an update
-            # This is a workaround since we can't directly update UI components from a thread
+            #Use the refresh button's click method to trigger an update
+            #This is a workaround since we can't directly update UI components from a thread
             refresh_btn.click()
         except:
             pass
 
-# === Launch Everything ===
+#Launch Everything
 game_state = "waiting"
-game_ender = None  # Initialize game_ender
+game_ender = None  #Initialize game_ender
 
-# Initialize ad blocker
+#Initialize ad blocker
 BLOCKLIST_FILE = "blocklist.txt"
 ALLOWLIST_FILE = "allowlist.txt"
 
-# Create empty blocklist if needed
+#Create empty blocklist if needed
 if not os.path.exists(BLOCKLIST_FILE):
     with open(BLOCKLIST_FILE, 'w') as f:
-        f.write("# Blocklist - Domains listed here will be blocked\n")
-        f.write("# Add one domain per line\n")
+        f.write("#Blocklist - Domains listed here will be blocked\n")
+        f.write("#Add one domain per line\n")
         f.write("0.0.0.0 doubleclick.net\n")
         f.write("0.0.0.0 googleadservices.com\n")
 
-# Create empty allowlist if needed
+#Create empty allowlist if needed
 if not os.path.exists(ALLOWLIST_FILE):
     with open(ALLOWLIST_FILE, 'w') as f:
-        f.write("# Allowlist - Domains listed here will never be blocked\n")
-        f.write("# Add one domain per line\n")
+        f.write("#Allowlist - Domains listed here will never be blocked\n")
+        f.write("#Add one domain per line\n")
         f.write("google.com\n")
         f.write("youtube.com\n")
 
-# Initialize DNS resolver
+#Initialize DNS resolver
 ad_blocker = BlocklistResolver(UPSTREAM_DNS, BLOCKLIST_FILE, ALLOWLIST_FILE)
 
-# Start DNS server in background
+#Start DNS server in background
 dns_server = DNSServer(ad_blocker, port=12553, address="127.0.0.1")
 dns_thread = threading.Thread(target=dns_server.start, daemon=True)
 dns_thread.start()
 
 with gr.Blocks() as demo:
-    gr.Markdown("### Checkers Game with Ad Blocker")
+    gr.Markdown("###Checkers Game with Ad Blocker")
     
     with gr.Row():
         with gr.Column(scale=3):
@@ -849,14 +900,14 @@ with gr.Blocks() as demo:
                 end_game_btn = gr.Button("End Game")
         
         with gr.Column(scale=1):
-            gr.Markdown("### Game Info")
+            gr.Markdown("###Game Info")
             players_info = gr.Textbox(label="Connected Players", interactive=False, value="BLACK: Waiting\nWHITE: Waiting")
             
-            gr.Markdown("### Ad Blocker Status")
+            gr.Markdown("###Ad Blocker Status")
             ad_blocker_info = gr.Textbox(label="Domain Status", interactive=False, value="Initializing...")
             domain_refresh_btn = gr.Button("Refresh Domain")
             
-            gr.Markdown("### Rules")
+            gr.Markdown("###Rules")
             gr.Markdown("""
             - BLACK moves first
             - Regular checkers can only move diagonally forward
@@ -865,12 +916,12 @@ with gr.Blocks() as demo:
             - Multiple captures in one turn are allowed
             """)
     
-    # Set up event handlers
+    #Set up event handlers
     move_btn.click(fn=move_piece_gui, inputs=[start_input, end_input], outputs=[board_output, status_output, players_info, ad_blocker_info])
     restart_btn.click(fn=restart_game, outputs=[board_output, status_output, players_info, ad_blocker_info])
     domain_refresh_btn.click(fn=refresh_domain, outputs=[ad_blocker_info])
     
-    # For the End Game button, we'll use the current player
+    #For the End Game button, we'll use the current player
     end_game_btn.click(
         fn=lambda: end_game(
             "BLACK" if board and board.current_player == BLACK else "WHITE"
@@ -878,18 +929,18 @@ with gr.Blocks() as demo:
         outputs=[board_output, status_output, players_info, ad_blocker_info]
     )
     
-    # Set up refresh mechanism
+    #Set up refresh mechanism
     refresh_btn = gr.Button("Refresh", visible=False)
     refresh_btn.click(fn=refresh_status, outputs=[board_output, status_output, players_info, ad_blocker_info])
     
-    # Initialize the board
+    #Initialize the board
     demo.load(lambda: (draw_board_gui(CheckersBoard()), update_game_status(), get_player_status(), get_ad_blocker_status()), 
              outputs=[board_output, status_output, players_info, ad_blocker_info])
     
-    # Start server socket in background thread
+    #Start server socket in background thread
     threading.Thread(target=socket_thread, daemon=True).start()
     
-    # Start UI refresh thread
+    #Start UI refresh thread
     threading.Thread(target=ui_refresh_thread, args=(refresh_btn,), daemon=True).start()
 
 demo.launch(share=True)
