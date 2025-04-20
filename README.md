@@ -1,73 +1,57 @@
+# DNS Adblocker
 
-# Checkers-online  
-An online Checkers game bundled with a DNS Adblocker and SMTP email summary feature, for course Computer Networks Spring 2025,IIT Dharwad
+A DNS-based ad blocking solution with email notification capabilities.
 
----
-
-## DNS Adblocker Setup Guide
+## Setup Guide
 
 ### Prerequisites
-
-Make sure you have the following installed:
-
 - Python 3+
-- [`dnslib`](https://pypi.org/project/dnslib/)
-- [`requests`](https://pypi.org/project/requests/)
-- [`gradio`](https://pypi.org/project/gradio/)
+- dnslib package
+- requests package
+- gradio package
 
----
+### Installation and Setup
 
-### 📥 Installation
+1. **Create and activate a Python virtual environment:**
+   ```bash
+   # Create virtual environment
+   python3 -m venv venv
+   
+   # Activate virtual environment
+   # On Linux/macOS:
+   source venv/bin/activate
+   # On Windows:
+   # venv\Scripts\activate
+   ```
 
-Install the required Python packages:
+2. **Install required packages:**
+   ```bash
+   pip install dnslib
+   pip install requests
+   pip install gradio
+   ```
 
-```bash
-pip install dnslib 
-pip install requests
-pip install gradio
-```
+3. **Run the setup script:**
+   ```bash
+   ./setup.sh
+   ```
 
----
+4. **Follow the instructions displayed in the terminal.**
 
-### ⚙️ Installation and Setup
+5. **Start the DNS adblocker with admin privileges:**
+   ```bash
+   sudo ./dns_adblocker.py --download --port 53
+   ```
 
-1. **Run the setup script:**
+6. **Launch the application components on different terminals:**
+   ```bash
+   python3 server_combine.py
+   python3 client_combine.py
+   ```
 
-    ```bash
-    ./setup.sh
-    ```
-
-2. **Follow the instructions** displayed in the terminal.
-
-3. **Start the DNS adblocker with admin privileges:**
-
-    ```bash
-    sudo ./dns_adblocker.py --download --port 53
-    ```
-
-4. **Launch the application components in separate terminals:**
-
-    ```bash
-    python3 dns_adblocker.py
-    python3 server_combine.py
-    python3 client_combine.py
-    ```
-
----
-
-### ⚠️ Important Note
-
-Before launching the application, ensure that the server email credentials(email id and
-app password) are included in the email_handler.py file within the  'EmailHandler' class
+## ⚠️ Important Note
+Before launching the application, ensure that the server email credentials (email ID and app password) are included in the `email_handler.py` file within the 'EmailHandler' class.
 
 Ensure the following files are located in the same directory as the other project files:
-
 - `server_bridge.py`
 - `email_handler.py`
-
----
-
-
-
-
-
