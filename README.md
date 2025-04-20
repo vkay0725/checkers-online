@@ -1,6 +1,6 @@
 # Checkers online
 
-An online checkers game with DNS Adblocking functionality and SMTP mail summary feature, for Computer Networks spring 2025, IIT Dharwad
+An online checkers game with DNS Adblocking functionality and SMTP mail summary feature, for Computer Networks spring 2024-25, IIT Dharwad
 
 ## Setup Guide
 
