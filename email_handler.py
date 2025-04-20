@@ -11,8 +11,8 @@ class EmailHandler:
     def __init__(self, smtp_server="smtp.gmail.com", smtp_port=587):
         self.smtp_server = smtp_server
         self.smtp_port = smtp_port
-        self.sender_email = "xxxx@iitdh.ac.in"
-        self.sender_password = "abcd" #enter your password generated from apps.google.com
+        self.sender_email = "<email-id-for-the-server>"
+        self.sender_password = "<app-password>" #enter your password generated from apps.google.com
         
         # Player email addresses
         self.player_emails = {
