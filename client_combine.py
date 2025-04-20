@@ -49,15 +49,14 @@ def display_board(board_str):
 
 def message_listener(client_socket):
     """Listen for and process messages from the server"""
-    global waiting_for_game, client_active
-    should_exit = False
-    
+    global waiting_for_game, client_active  #Add client_active flag
+    should_exit = False  #Add a new flag to control client exit
     while True:
         try:
             server_message = client_socket.recv(1024).decode('utf-8')
             if not server_message:  #Empty message, server closed connection
                 print("\nServer closed connection.")
-                client_active = False
+                client_active = False  #Set client inactive
                 try:
                     client_socket.close()
                 except:
@@ -67,25 +66,19 @@ def message_listener(client_socket):
             #Check if server rejected the connection
             if "SERVER FULL" in server_message:
                 print(server_message)
-                client_active = False
-                return False
+                client_active = False  #Set client inactive
+                return False  #Return False to indicate rejection
             
-            #Detection of game state changes
-            if "Game started!" in server_message or "New game started!" in server_message or "Game restarted!" in server_message:
-                waiting_for_game = False
-                print("Game is starting!")
-            elif "Game in progress" in server_message:
-                waiting_for_game = False
-                print("Joining existing game in progress!")
-            elif "Waiting for another player" in server_message:
+            #Print the message first (including player assignment)
+            print(server_message)
+            if "Waiting for another player" in server_message:
                 waiting_for_game = True
                 print("Waiting for another player to join...")
-            elif "Your turn" in server_message:
+            elif "Game started!" in server_message or "New game started!" in server_message:
                 waiting_for_game = False
-                print("\nIt's your turn to move!")
-            
+                print("Game is starting!")
             #Check for board display
-            if "  A B C D E F G H" in server_message:
+            elif "  A B C D E F G H" in server_message:
                 #Extract and display the board between row markers
                 lines = server_message.split('\n')
                 board_start = -1
@@ -102,11 +95,8 @@ def message_listener(client_socket):
                     board_str = '\n'.join(lines[board_start:board_end])
                     display_board(board_str)
             
-            #Always print the message after handling special cases
-            print(server_message)
-            
             #Check for game events
-            if "Game over" in server_message or "wins" in server_message:
+            elif "Game over" in server_message or "wins" in server_message:
                 print("Game has ended.")
                 response = input("Play again? (yes/no): ").strip().lower()
                 if response == "yes":
@@ -118,7 +108,7 @@ def message_listener(client_socket):
                     print("Thanks for playing!")
                     client_socket.sendall("quit".encode('utf-8'))
                     should_exit = True
-                    client_active = False
+                    client_active = False  #Set client inactive
                     break
             
             #Handle game ending by a player
@@ -134,7 +124,7 @@ def message_listener(client_socket):
                     print("Thanks for playing!")
                     client_socket.sendall("quit".encode('utf-8'))
                     should_exit = True
-                    client_active = False
+                    client_active = False  #Set client inactive
                     break
             elif "Opponent quit" in server_message:
                 print("Opponent quit. Game over.")
@@ -146,20 +136,24 @@ def message_listener(client_socket):
                     client_socket.sendall("quit".encode('utf-8'))
                     print("You quit the game.")
                     should_exit = True
-                    client_active = False
+                    client_active = False  #Set client inactive
                     break
+            
+            elif "Your turn" in server_message:
+                waiting_for_game = False  #Reset waiting flag
+                print("\nIt's your turn to move!")
         
         except ConnectionResetError:
             print("\nConnection reset by server.")
-            client_active = False
+            client_active = False  #Set client inactive
             break
         except Exception as e:
             print(f"\nError receiving data: {e}")
-            client_active = False
+            client_active = False  #Set client inactive
             break
     return should_exit 
 
-#Function to get email preference
+#ADDED: New function to get email preference
 def get_email_preference():
     while True:
         """Ask the user if they want to receive a game summary by email"""
@@ -181,8 +175,8 @@ def get_email_preference():
 def start_client(host='127.0.0.1', port=65244):
     """Start the checkers client"""
     global waiting_for_game, client_active
-    waiting_for_game = True  #Initialize as waiting
-    client_active = True
+    waiting_for_game = False
+    client_active = True  #Initialize client as active
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
     try:
@@ -192,33 +186,25 @@ def start_client(host='127.0.0.1', port=65244):
         #Start a thread to listen for server messages
         listener_thread = threading.Thread(target=message_listener, args=(client_socket,), daemon=True)
         listener_thread.start()
-        
         #Wait briefly for initial server response
         time.sleep(1)
-        
         #Check if connection was rejected
-        if not client_active:
-            return
-        
-        #Ask for email preference before starting the game
+        if not listener_thread.is_alive():
+            return  #Exit if the listener thread has already exited (meaning we got rejected)
+        #ADDED: Ask for email preference before starting the game
         email = get_email_preference()
         if email:
             print(f"Email preference set to: {email}")
             client_socket.sendall(f"EMAIL:{email}".encode('utf-8'))
             time.sleep(0.5)  #Give server time to process
-        
         #Main input loop
         should_exit = False
         status_message_timer = 0
-        waiting_message_count = 0  #To avoid spamming waiting messages
 
-        while not should_exit and client_active:
+        while not should_exit and client_active:  #Check client_active flag
             try:
                 #Only prompt for input if not waiting for a game
                 if not waiting_for_game and client_active:
-                    #Reset waiting message counter when active
-                    waiting_message_count = 0
-                    
                     move = input("\nEnter your move (e.g., E2 to E4), 'end game' to end the game, or 'quit' to exit: ")
                     
                     #Check if client is still active before sending
@@ -237,36 +223,22 @@ def start_client(host='127.0.0.1', port=65244):
                     else:
                         #Send the move to the server
                         client_socket.sendall(move.encode('utf-8'))
-                        time.sleep(0.5)  #Wait for server response
+                        
+                        #Wait a bit for the server to process
+                        time.sleep(0.5)
                 else:
                     #Don't wait forever if server connection is lost
                     if not client_active:
                         print("\nConnection to server lost while waiting for game.")
                         break
                         
-                    time.sleep(1)  #Check every second
+                    time.sleep(1)  #Check every second, but don't print anything
                     
-                    #Print status message periodically, but not too often
+                    #Print status message every 10 seconds, but only if connection is active
                     current_time = int(time.time())
                     if current_time % 10 == 0 and current_time != status_message_timer:
                         status_message_timer = current_time
-                        waiting_message_count += 1
-                        
-                        #After waiting for a while, allow user to cancel waiting
-                        if waiting_message_count > 3:  #After about 30 seconds
-                            print("Still waiting for game to start... (press Ctrl+C to quit or type 'force' to try to start game)")
-                            
-                            #Use select to check if user input is available without blocking
-                            rlist, _, _ = select.select([sys.stdin], [], [], 0.1)
-                            if rlist:
-                                user_input = input().strip().lower()
-                                if user_input == "force":
-                                    #Try to force restart the game from client side
-                                    print("Attempting to force start/restart game...")
-                                    client_socket.sendall("new game".encode('utf-8'))
-                                    time.sleep(1)  #Wait for server response
-                        else:
-                            print("Waiting for game to start... (press Ctrl+C to quit)")
+                        print("Still waiting for game to start... (press Ctrl+C to quit)")
                                     
             except KeyboardInterrupt:
                 print("\nKeyboard interrupt received. Exiting...")
