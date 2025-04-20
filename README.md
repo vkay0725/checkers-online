@@ -57,6 +57,9 @@ pip install gradio
 
 ### ⚠️ Important Note
 
+Before launching the application, ensure that the server email credentials(email id and
+app password) are included in the email_handler.py file within the  'EmailHandler' class
+
 Ensure the following files are located in the same directory as the other project files:
 
 - `server_bridge.py`
