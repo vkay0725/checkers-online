@@ -1,6 +1,6 @@
-# DNS Adblocker
+# Checers online
 
-A DNS-based ad blocking solution with email notification capabilities.
+An online checkers game with DNS Adblocing functionality and SMTP mail summary feature, for Computer Networks spring 2025, IIT Dharwad
 
 ## Setup Guide
 
